@@ -1,66 +1,68 @@
-
 #include <SPI.h>
 //#include <SD.h>
 #include "SdFat.h"
-SdFat SD;
-
-#define SD_CS_PIN 5
+SdFat sd;
+SPISettings settings(14000000, MSBFIRST, SPI_MODE0);
+#define chipSelect 5 //4
 #define buttonPin 6
 #define ledPin 10
-File myFile;
+#define FILE_BASE_NAME "BR_"
+SdFile file;
 const unsigned long period = 10000;
 unsigned long startMillis;
-int buttonState=0; 
+int buttonState = 0;
 
 void setup() {
   // Open serial communications and wait for port to open:
   Serial.begin(9600);
   pinMode(ledPin, OUTPUT); // initialize the LED pin as an output:
-  pinMode(buttonPin, INPUT);  // initialize the pushbutton pin as an input:
-  attachInterrupt(digitalPinToInterrupt(buttonPin),procedure,CHANGE);
+  pinMode(buttonPin, INPUT_PULLUP);  // initialize the pushbutton pin as an input:
+  //  attachInterrupt(digitalPinToInterrupt(buttonPin), writeSD, CHANGE);
   while (!Serial) {}
 
   Serial.print("Initializing SD card...");
-  if (!SD.begin(SD_CS_PIN)) {
-    Serial.println("initialization failed!");
-    return; // This return statement terminates the program.
-  }
+//  if (!sd.begin(chipSelect, settings)) {
+//    Serial.println("initialization failed!");
+//    return; // This return statement terminates the program.
+//  }
   Serial.println("initialization done.");
-  startMillis = millis();
-  procedure();
 }
 
-
 void loop() {
-  //Nothing here
+  if (!digitalRead(buttonPin)) {
+    writeSD();
+  }
 }
 
 void writeSD() {
-  myFile = SD.open("test.txt", FILE_WRITE);
-  if (myFile) {
-    digitalWrite(ledPin,HIGH);
-    while (millis() - startMillis < period) {
-      myFile.println("X");
+  //  detachInterrupt(digitalPinToInterrupt(buttonPin));
+  // Find an unused file name.
+  const uint8_t BASE_NAME_SIZE = sizeof(FILE_BASE_NAME) - 1;
+  char fileName[13] = FILE_BASE_NAME "00.txt";
+  while (sd.exists(fileName)) {
+    if (fileName[BASE_NAME_SIZE + 1] != '9') {
+      fileName[BASE_NAME_SIZE + 1]++;
+    } else if (fileName[BASE_NAME_SIZE] != '9') {
+      fileName[BASE_NAME_SIZE + 1] = '0';
+      fileName[BASE_NAME_SIZE]++;
     }
-    myFile.close();
+  }
+  Serial.println("ISR entered...");
+  startMillis = millis();
+  if (file.open(fileName, O_WRONLY | O_CREAT | O_EXCL)) {
+    digitalWrite(ledPin, HIGH);
+    while (millis() - startMillis < period) {
+      file.print("X");
+    }
+    file.close();
+    digitalWrite(ledPin, LOW);
     Serial.println("done.");
   }
   // close the file:
   else {
     // if the file didn't open, print an error:
     Serial.println("error opening test.txt");
-    delay(200); // switch debounce in case SD doesn't open
   }
-}
-
-void procedure(){
-  buttonState = digitalRead(buttonPin); // read the state of the pushbutton value:
-  if(buttonState==LOW){ // check if the pushbutton is pressed. If it is, the buttonState is HIGH:
-    digitalWrite(ledPin,LOW);// If the pushbutton is not pressed, the led will remain turned off and the loop() will be callled again till we push the pushbutton.
-    procedure();                  
-  }
-  else if(buttonState==HIGH){ // When we press the button, it will wrtie into the SD card for 10 seconds, and the LED is turned on
-     writeSD();
-     digitalWrite(ledPin,LOW);// After writing, the LED is turned off
-  }
+  delay(1000); // switch debounce in case SD doesn't open
+  //  attachInterrupt(digitalPinToInterrupt(buttonPin), writeSD, CHANGE);
 }
