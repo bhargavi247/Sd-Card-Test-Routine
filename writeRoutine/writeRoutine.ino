@@ -2,10 +2,11 @@
 //#include <SD.h>
 #include "SdFat.h"
 SdFat sd;
-SPISettings settings(14000000, MSBFIRST, SPI_MODE0);
+
+#define SPI_SPEED SD_SCK_MHZ(4)
 #define chipSelect 5 //4
 #define buttonPin 6
-#define ledPin 10
+#define ledPin 8
 #define FILE_BASE_NAME "BR_"
 SdFile file;
 const unsigned long period = 10000;
@@ -21,10 +22,10 @@ void setup() {
   while (!Serial) {}
 
   Serial.print("Initializing SD card...");
-//  if (!sd.begin(chipSelect, settings)) {
-//    Serial.println("initialization failed!");
-//    return; // This return statement terminates the program.
-//  }
+  if (!sd.begin(chipSelect, SPI_SPEED)) {
+    Serial.println("initialization failed!");
+    return; // This return statement terminates the program.
+  }
   Serial.println("initialization done.");
 }
 
@@ -61,7 +62,7 @@ void writeSD() {
   // close the file:
   else {
     // if the file didn't open, print an error:
-    Serial.println("error opening test.txt");
+    Serial.println("error opening file");
   }
   delay(1000); // switch debounce in case SD doesn't open
   //  attachInterrupt(digitalPinToInterrupt(buttonPin), writeSD, CHANGE);
