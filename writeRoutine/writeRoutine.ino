@@ -4,7 +4,7 @@
 SdFat sd;
 
 #define SPI_SPEED SD_SCK_MHZ(4)
-#define chipSelect 5 //4
+#define chipSelect 9//4
 #define buttonPin 6
 #define ledPin 8
 #define FILE_BASE_NAME "BR_"
@@ -27,6 +27,15 @@ void setup() {
     return; // This return statement terminates the program.
   }
   Serial.println("initialization done.");
+  digitalWrite(ledPin, LOW);
+  delay(200);
+  digitalWrite(ledPin, HIGH);
+  delay(200);
+  digitalWrite(ledPin, LOW);
+  delay(200);
+  digitalWrite(ledPin, HIGH);
+  delay(200);
+  digitalWrite(ledPin, LOW);
 }
 
 void loop() {
